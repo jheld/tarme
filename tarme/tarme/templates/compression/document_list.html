@@ -1,9 +1,18 @@
 <!doctype html>
 <html>
   <head>
-    <title>Tarme</title>
+    <title>Tarme uploaded files</title>
   </head>
   <body>
-    Hello, World!
+    {% if object_list.count %}
+    <h1>Uploaded Files</h1>
+    {% endif %}
+    <ul>
+      {% for object in object_list %}
+      <li>{{ object.doc }}</li>
+      {% empty %}
+      <li>No uploaded files</li>
+      {% endfor %}
+    </ul>
   </body>
 </html>
