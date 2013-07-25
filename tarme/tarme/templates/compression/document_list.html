@@ -7,12 +7,12 @@
     {% if object_list.count %}
     <h1>Uploaded Files</h1>
     {% endif %}
-    <ul>
+    <ol>
       {% for object in object_list %}
-      <li>{{ object.doc }}</li>
+      <li><a href="{% url 'document' object.pk %}">{{ object.doc }}</a></li>
       {% empty %}
       <li>No uploaded files</li>
       {% endfor %}
-    </ul>
+    </ol>
   </body>
 </html>
