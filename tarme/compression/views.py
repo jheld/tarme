@@ -95,12 +95,12 @@ class CompressView(FormView):
             return super(CompressView, self).post(request,*args,**kwargs)
 
     
-    '''
+    
     def get_context_data(self, **kwargs):
-        print('context')
         context = super(CompressView, self).get_context_data(**kwargs)
+        context['pk'] = self.kwargs['pk']
         return context
-    '''
+    
 
 
 

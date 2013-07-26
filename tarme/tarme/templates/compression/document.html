@@ -8,6 +8,7 @@
     <h4>Original</h4>
     <p>{{ document.doc }}</p>
     <p>Size: {{ document.doc.size }}</p>
+    <a href="{% url 'compress' document.pk %}">Compress...</a>
     {% if document.compressed_docs.count %}
     {% for cDoc in document.compressed_docs.all %}
     <h4>Compressed as {{ cDoc.compression_type }} </h4>
@@ -22,6 +23,8 @@
 
 			       {% endfor %}
 			       {% endif %}
+                       <hr>
+<a href="{% url 'upload'%}">Upload...</a>
   </body>
 </html>
 
