@@ -19,6 +19,99 @@ from compression.forms import DocumentForm, CompressForm
 
 from tarme.settings import ROOT_DIR,MEDIA_ROOT
 
+
+#
+
+#
+
+
+cKey = 'GtqjjxowolGUSWI6JYCi0ZHqQcigxelL'
+cSecret = 'b2nB2wdIAEj4pGGTTuunY4B9qewIiQ5I3RKcjdE0PgX6AJUX'
+
+import my_oauth
+from django.http import HttpResponse
+from django.template import Context, RequestContext
+from django.template.loader import get_template
+
+
+import urlparse
+import oauth2 as oauth
+import requests
+
+request_token_url = 'https://api.copy.com/oauth/request'
+callback_url = 'http://localhost:8000/verify'
+consumer = oauth.Consumer(key=cKey,secret=cSecret)
+oauth_request = oauth.Request.from_consumer_and_token(consumer,parameters={'oauth_callback':callback_url},http_url=request_token_url)
+oauth_request.sign_request(oauth.SignatureMethod_HMAC_SHA1(),consumer,None)
+
+response = requests.get(request_token_url,headers=oauth_request.to_header())
+request_token = dict(urlparse.parse_qsl(response.content))
+
+
+def getRequestURL(request):
+	request_token_url = 'https://api.copy.com/oauth/request'
+	callback_url = 'http://localhost:8000/verify'
+	consumer = oauth.Consumer(key=cKey,secret=cSecret)
+	oauth_request = oauth.Request.from_consumer_and_token(consumer,parameters={'oauth_callback':callback_url},http_url=request_token_url)
+	oauth_request.sign_request(oauth.SignatureMethod_HMAC_SHA1(),consumer,None)
+	
+	response = requests.get(request_token_url,headers=oauth_request.to_header())
+
+	request_token = dict(urlparse.parse_qsl(response.content))
+	theTemplate = get_template("auth.html")
+	resp = theTemplate.render(Context({'authUrl': request_token}))
+	return HttpResponse(resp)
+
+
+def getAuthUrl(request):
+	s = my_oauth.get_authorization_url("https://api.twitter.com/oauth/request_token",
+	"https://api.twitter.com/oauth/authorize",
+	"http://localhost:8000/verify") # change this to a real view
+        #s= {}
+	request.session["request_token"] = my_oauth.requestToken
+	request.session["request_token_secret"] = my_oauth.requestTokenSecret
+	theTemplate = get_template("auth.html")
+	resp = theTemplate.render(Context({"authUrl" : s}))
+	return HttpResponse(resp)
+
+#class AuthURLView(TemplateView):
+    
+
+def callback_handler(request):
+	s = request.GET["oauth_verifier"]
+	r = request.session["request_token"]
+	rs = request.session["request_token_secret"]
+	my_oauth.get_access_token("https://api.twitter.com/oauth/access_token",
+	r, rs, s)
+	request.session["access_token"] = my_oauth.accessToken
+	request.session["access_token_secret"] = my_oauth.accessTokenSecret
+	theTemplate = get_template("verify.html")
+	resp = theTemplate.render(Context())
+	return HttpResponse(resp)
+
+
+'''
+def tweet(request):
+	theTemplate = get_template("tweet.txt")
+	resp = theTemplate.render(RequestContext(request,
+	{"accessToken" : request.session.get("access_token", ""),
+	"accessTokenSecret" : request.session.get("access_token_secret", "")}))
+	return HttpResponse(resp)
+'''
+
+'''
+def update(request):
+	my_oauth.set_access_token(request.POST["access"], request.POST["secret"])
+	s = my_oauth.get_api_response("https://api.twitter.com/1/statuses/update.json",
+	"POST", {"status" : request.POST.get("status")})
+	theTemplate = get_template("update.txt")
+	resp = theTemplate.render(Context({"dump" : s}))
+	return HttpResponse(resp)
+'''
+
+
+
+
 class SuccessView(TemplateView):
     template_name = 'success.html'
 
@@ -104,27 +197,16 @@ class CompressView(FormView):
 
 
 
-class UploadView(FormView):
-    template_name = 'upload.html'
+class DocumentUploadView(FormView):
+    template_name = 'compression/document_add.html'
     form_class = DocumentForm
     model = Document
     success_url = '/document_list/'
-    def form_valid(self, form):
-        return super(UploadView, self).form_valid(form)
-
-    def form_invalid(self, form):
-        return super(UploadView, self).form_invalid(form)
-
 
     def post(self, request, *args, **kwargs):        
         form = DocumentForm(request.POST,request.FILES)
         if self.form_valid(form):
             newDocument = Document(doc = request.FILES['document'])
             newDocument.save()
-            return super(UploadView, self).post(request,*args,**kwargs)
-
-    
-    def get_context_data(self, **kwargs):
-        context = super(UploadView, self).get_context_data(**kwargs)
-        return context
+            return super(DocumentUploadView, self).post(request,*args,**kwargs)
 

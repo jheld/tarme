@@ -162,3 +162,16 @@ LOGGING = {
         },
     }
 }
+
+#SESSION_FILE_PATH = None
+
+#SESSION_ENGINE = "django.contrib.sessions.backends.file"
+
+
+OAUTH_AUTHORIZE_VIEW = 'compression.views.oauth_authorize'
+
+OAUTH_REALM_KEY_NAME = 'http://api.copy.com/oauth/request'
+
+#OAUTH_BLACKLISTED_HOSTNAMES = ['localhost', '127.0.0.1']
+
+OAUTH_SIGNATURE_METHODS = ['hmac-sha1',]

@@ -4,7 +4,7 @@ from django.conf.urls import patterns, include, url
 from django.contrib import admin
 admin.autodiscover()
 
-from compression.views import CompressView, SuccessView, UploadView
+from compression.views import CompressView, SuccessView, DocumentUploadView#, getAuthUrl, callback_handler#, tweet, update
 from compression.models import Document
 from django.views.generic import TemplateView, ListView, DetailView
 
@@ -22,6 +22,9 @@ urlpatterns = patterns('',
 #url('^compression_type/$',TemplateView.as_view(template_name='compression_type.html'),name='compression_type'),
 url('^document_list/(?P<pk>\d+)/compress$',CompressView.as_view(),name='compress'),
 url('^document_list/*$',ListView.as_view(template_name='compression/document_list.html',model=Document),name='document_list'),
-url('^$',UploadView.as_view(),name='upload'),
+url('^document/add$',DocumentUploadView.as_view(),name='document_add'),
 url('^document_list/(?P<pk>\d+)/{0,1}$',DetailView.as_view(template_name='compression/document.html',model=Document),name='document'),
+#(r'^auth/$', getAuthUrl),
+#(r'^verify/$', callback_handler),
+#                       url(r'^oauth/',include('oauth_provider.urls'))
 )
