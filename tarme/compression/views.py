@@ -207,6 +207,9 @@ class CompressView(FormView):
                 if not a_c_doc == doc_to_keep:
                     docs_to_remove.append(a_c_doc)
             map(document.compressed_docs.remove, docs_to_remove)
+            for doc_to_remove in docs_to_remove:
+                    doc_to_remove.delete()
+                    doc_to_remove.save()
             document.save()
             return super(CompressView, self).post(request,*args,**kwargs)
 

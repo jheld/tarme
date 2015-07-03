@@ -7,4 +7,5 @@ class DocumentForm(forms.Form):
         help_text='max. 42 megabytes'
         )
 class CompressForm(forms.Form):
-    compression_type = forms.ChoiceField(choices=(('tar.gz','tar.gz'),('tar.bz2','tar.bz2'),('zip','zip'),('gzip','gzip'),),label='compression type',help_text='will create a compressed file')
+    # compression_type = forms.ChoiceField(choices=(('tar.gz','tar.gz'),('tar.bz2','tar.bz2'),('zip','zip'),('gzip','gzip'),),label='compression type',help_text='will create a compressed file')
+    pass
