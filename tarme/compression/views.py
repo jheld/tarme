@@ -144,55 +144,70 @@ class CompressView(FormView):
 
         form = CompressForm(request.POST)
         if self.form_valid(form):
-            compression_type = request.POST['compression_type']
+            # compression_type = request.POST['compression_type']
             document = Document.objects.get(pk=kwargs['pk'])
             #print(MEDIA_ROOT+'/'+document.doc.name[0:document.doc.name.rfind('/')+1])
             fullpath = MEDIA_ROOT+'/'+document.doc.name
-            tarfilepath = '{}.{}'.format(fullpath,compression_type)
             chdir(MEDIA_ROOT+'/'+document.doc.name[0:document.doc.name.rfind('/')+1])
-        
-            tarType = 'gz'
-            if compression_type == 'tar.gz':
+            the_types = ['tar.gz', 'tar.bz2', 'gzip', 'zip']
+            size_by_filename = {}
+            for the_type in the_types:
+                compression_type = the_type
                 tarType = 'gz'
-            elif compression_type == 'tar.bz2':
-                tarType = 'bz2'
-            elif compression_type == 'gzip':
-                tarType = 'gz'
-            elif compression_type == 'zip':
-                tarType = ''
-                doZip = True
-            if tarType:
-                    if not os.path.exists(tarfilepath):
-                            tar = tarfile.open(tarfilepath,'w:{tType}'.format(tType=tarType))
-                            tar.add(fullpath)
-                            tar.close()
+                if compression_type == 'tar.gz':
+                    tarType = 'gz'
+                elif compression_type == 'tar.bz2':
+                    tarType = 'bz2'
+                elif compression_type == 'gzip':
+                    tarType = 'gz'
+                elif compression_type == 'zip':
+                    tarType = ''
+                    doZip = True
+                tarfilepath = '{}.{}'.format(fullpath,compression_type)
+                if tarType:
+                        if not os.path.exists(tarfilepath):
+                                tar = tarfile.open(tarfilepath,'w:{tType}'.format(tType=tarType))
+                                tar.add(fullpath)
+                                tar.close()
 
-            elif doZip:
-                zFile = zipfile.ZipFile(tarfilepath,'w')
-                zFile.write(fullpath)
-                zFile.close()
-                if not os.path.exists(tarfilepath):
+                elif doZip:
+                    zFile = zipfile.ZipFile(tarfilepath,'w')
+                    zFile.write(fullpath)
+                    zFile.close()
+                    if not os.path.exists(tarfilepath):
+                            with open(tarfilepath,'r') as f:
+                                    myfile = File(f)
+                                    cDoc = CompressedDocument()
+                                    cDoc.compression_type = compression_type
+                                    cDoc.compressed_doc.save(tarfilepath+'.'+compression_type,myfile)
+                                    cDoc.save()
+                                    document.compressed_docs.add(cDoc)
+                                    document.save()
+                                    unlink(tarfilepath)
+
+                chdir(ROOT_DIR)
+                if os.path.exists(tarfilepath):
                         with open(tarfilepath,'r') as f:
                                 myfile = File(f)
                                 cDoc = CompressedDocument()
                                 cDoc.compression_type = compression_type
-                                cDoc.compressed_doc.save(tarfilepath+'.'+compression_type,myfile)
+                                cDoc.compressed_doc.save(document.doc.name+'.'+compression_type,myfile)
                                 cDoc.save()
+                                size_by_filename[cDoc] = cDoc.compressed_doc.size
                                 document.compressed_docs.add(cDoc)
                                 document.save()
                                 unlink(tarfilepath)
-
-            chdir(ROOT_DIR)
-            if os.path.exists(tarfilepath):
-                    with open(tarfilepath,'r') as f:
-                            myfile = File(f)
-                            cDoc = CompressedDocument()
-                            cDoc.compression_type = compression_type
-                            cDoc.compressed_doc.save(document.doc.name+'.'+compression_type,myfile)
-                            cDoc.save()
-                            document.compressed_docs.add(cDoc)
-                            document.save()
-                            unlink(tarfilepath)
+            largest_size = min(size_by_filename.itervalues())
+            doc_to_keep = None
+            for the_doc, the_size in size_by_filename.iteritems():
+                if the_size == largest_size:
+                    doc_to_keep = the_doc
+            docs_to_remove = []
+            for a_c_doc in document.compressed_docs.all():
+                if not a_c_doc == doc_to_keep:
+                    docs_to_remove.append(a_c_doc)
+            map(document.compressed_docs.remove, docs_to_remove)
+            document.save()
             return super(CompressView, self).post(request,*args,**kwargs)
 
     
