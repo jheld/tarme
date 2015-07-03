@@ -1,0 +1,12 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Tarme</title>
+  </head>
+  <body>
+    <p>Confirm your delete!</p>
+    <form method="POST" action"/">
+      {% csrf_token %}<input type="submit" value="DELETE">
+    </form>
+  </body>
+</html>

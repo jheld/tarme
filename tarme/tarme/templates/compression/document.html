@@ -14,13 +14,12 @@
     <h4>Compressed as {{ cDoc.compression_type }} </h4>
     <p>{{ cDoc.compressed_doc }}</p>
     <p>Size: {{ cDoc.compressed_doc.size }}</p>
-    {% if cDoc.compressed_doc.size <= document.compressed_doc.size %}
-			       <p>Why on earth would you compress such a *small* file???</p>
+    {% if cDoc.compressed_doc.size >= document.doc.size %}
+			       <p>Wow, that didn't seem to compress well at all!</p>
 			       
 			       {% else %}
 			       Good choice on compressing that!
 			       {% endif %}
-
 			       {% endfor %}
 			       {% endif %}
                        <hr>

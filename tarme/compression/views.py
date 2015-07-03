@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
 import tarfile, zipfile
-from os import chdir, remove
+import os
+import sys
+from os import chdir, unlink
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.http import HttpResponseRedirect
-from django.core.urlresolvers import reverse
+from django.core.urlresolvers import reverse, reverse_lazy
 from django.core.files import File
 
-from django.views.generic.edit import FormView, CreateView, UpdateView
+from django.views.generic.edit import FormView, CreateView, UpdateView, DeleteView
 from django.views.generic import ListView
 from django.views.generic.base import TemplateView#, BaseDetailView
 
@@ -115,6 +117,10 @@ def update(request):
 class SuccessView(TemplateView):
     template_name = 'success.html'
 
+
+class CompressDeleteView(DeleteView):
+        model = Document
+        success_url = reverse_lazy('document_list')
 '''
 class FileResponseMixin(object):
     response_class = HttpResponse
@@ -142,7 +148,7 @@ class CompressView(FormView):
             document = Document.objects.get(pk=kwargs['pk'])
             #print(MEDIA_ROOT+'/'+document.doc.name[0:document.doc.name.rfind('/')+1])
             fullpath = MEDIA_ROOT+'/'+document.doc.name
-            tarfilepath = fullpath+'1'+'.'+compression_type;
+            tarfilepath = '{}.{}'.format(fullpath,compression_type)
             chdir(MEDIA_ROOT+'/'+document.doc.name[0:document.doc.name.rfind('/')+1])
         
             tarType = 'gz'
@@ -156,35 +162,37 @@ class CompressView(FormView):
                 tarType = ''
                 doZip = True
             if tarType:
-                tar = tarfile.open(tarfilepath,'w:{tType}'.format(tType=tarType))
-                tar.add(fullpath)
-                tar.close()
+                    if not os.path.exists(tarfilepath):
+                            tar = tarfile.open(tarfilepath,'w:{tType}'.format(tType=tarType))
+                            tar.add(fullpath)
+                            tar.close()
 
             elif doZip:
                 zFile = zipfile.ZipFile(tarfilepath,'w')
                 zFile.write(fullpath)
                 zFile.close()
-                with open(tarfilepath,'r') as f:
-                    myfile = File(f)
-                    cDoc = CompressedDocument()
-                    cDoc.compression_type = compression_type
-                    cDoc.compressed_doc.save(document.doc.name+'.'+compression_type,myfile)
-                    cDoc.save()
-                    document.compressed_docs.add(cDoc)
-                    document.save()
-                    remove(tarfilepath)
+                if not os.path.exists(tarfilepath):
+                        with open(tarfilepath,'r') as f:
+                                myfile = File(f)
+                                cDoc = CompressedDocument()
+                                cDoc.compression_type = compression_type
+                                cDoc.compressed_doc.save(tarfilepath+'.'+compression_type,myfile)
+                                cDoc.save()
+                                document.compressed_docs.add(cDoc)
+                                document.save()
+                                unlink(tarfilepath)
 
             chdir(ROOT_DIR)
-
-            with open(tarfilepath,'r') as f:
-                myfile = File(f)
-                cDoc = CompressedDocument()
-                cDoc.compression_type = compression_type
-                cDoc.compressed_doc.save(document.doc.name+'.'+compression_type,myfile)
-                cDoc.save()
-                document.compressed_docs.add(cDoc)
-                document.save()
-                remove(tarfilepath)
+            if os.path.exists(tarfilepath):
+                    with open(tarfilepath,'r') as f:
+                            myfile = File(f)
+                            cDoc = CompressedDocument()
+                            cDoc.compression_type = compression_type
+                            cDoc.compressed_doc.save(document.doc.name+'.'+compression_type,myfile)
+                            cDoc.save()
+                            document.compressed_docs.add(cDoc)
+                            document.save()
+                            unlink(tarfilepath)
             return super(CompressView, self).post(request,*args,**kwargs)
 
     
